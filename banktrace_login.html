@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BankTrace - Investigator Login</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #00e5ff;
+            --cyan-glow: rgba(0, 229, 255, 0.55);
+            --bg-dark: #020a18;
+            --card-bg: rgba(2, 10, 24, 0.75);
+            --gold: #f5c842;
+            --gold-bright: #ffaa00;
+            --danger-red: #ff6b6b;
+            --input-bg: rgba(0, 10, 25, 0.58);
+            --text-muted: rgba(255, 255, 255, 0.48);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Ambient glowing blobs */
+        .ambient-glow-left {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            left: -200px;
+            top: 10%;
+            background: radial-gradient(circle, rgba(0,200,180,0.06) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ambient-glow-right {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            right: -100px;
+            top: -100px;
+            background: radial-gradient(circle, rgba(230,120,0,0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Faint radar grid */
+        .radar-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* CRT Scanlines */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 3px,
+                rgba(0, 0, 0, 0.15) 4px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Main Login Card */
+        .login-card {
+            width: 460px;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-radius: 26px;
+            padding: 40px 40px 30px;
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            box-shadow: 0 8px 64px rgba(0,0,0,0.75), 0 0 80px rgba(0,229,255,0.07);
+            
+            /* Entrance Animation */
+            opacity: 0;
+            transform: translateY(30px);
+            animation: cardEntrance 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        /* Inner top shine gradient */
+        .card-shine {
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,229,255,0.5), transparent);
+        }
+
+        @keyframes cardEntrance {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Staggered Animations */
+        .stagger {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.3s; }
+        .delay-3 { animation-delay: 0.4s; }
+        .delay-4 { animation-delay: 0.5s; }
+        .delay-5 { animation-delay: 0.6s; }
+        .delay-6 { animation-delay: 0.7s; }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Logo Section */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .shield-wrapper {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .shield-icon {
+            width: 44px;
+            height: 44px;
+            z-index: 2;
+            filter: drop-shadow(0 0 8px rgba(0,229,255,0.6));
+        }
+
+        .shield-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--cyan);
+            border-radius: 50%;
+            animation: sonarPing 2.6s infinite ease-out;
+            z-index: 1;
+        }
+
+        @keyframes sonarPing {
+            0% {
+                width: 40px;
+                height: 40px;
+                opacity: 0.8;
+            }
+            100% {
+                width: 130px;
+                height: 130px;
+                opacity: 0;
+            }
+        }
+
+        h1.brand-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.95rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 12px var(--cyan-glow);
+            margin-bottom: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        .brand-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            color: rgba(0,229,255,0.7);
+            text-transform: uppercase;
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,229,255,0.25), transparent);
+            margin: 25px 0;
+        }
+
+        /* Form Section */
+        .section-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 25px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 6px rgba(255,180,0,0.5));
+            /* Needed for Safari drop-shadow with text-clip */
+            text-shadow: 0 0 6px rgba(255,180,0,0.5);
+        }
+        /* Remove text-shadow if clip is active manually to avoid double render issue, use robust approach below */
+        @supports (-webkit-background-clip: text) {
+            .section-label {
+                text-shadow: none;
+                /* Add pseudo element or structural wrapper if real glowing text is strictly needed, but let's stick to standard */
+                filter: drop-shadow(0 0 6px rgba(255,180,0,0.5));
+            }
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .custom-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid rgba(0,229,255,0.22);
+            border-radius: 13px;
+            padding: 15px 46px 15px 18px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.02rem;
+            font-weight: 600;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .custom-input::placeholder {
+            color: rgba(255,255,255,0.36);
+            font-weight: 500;
+        }
+
+        .custom-input:focus {
+            border-color: rgba(0,229,255,0.55);
+            background: rgba(0, 5, 15, 0.7);
+            box-shadow: 0 0 0 3px rgba(0,229,255,0.2);
+        }
+
+        .eye-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+            transition: color 0.2s;
+        }
+
+        .eye-btn:hover {
+            color: var(--cyan);
+        }
+
+        /* Select Wrapper */
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '';
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/200%2Fsvg' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            pointer-events: none;
+        }
+
+        .select-wrapper select.custom-input {
+            padding-right: 40px;
+            cursor: pointer;
+        }
+
+        .select-wrapper select.custom-input option {
+            background-color: #020a18;
+            color: #fff;
+        }
+
+        /* Action Button */
+        .access-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #00cfeb, #0099cc);
+            border: 1px solid rgba(0,229,255,0.6);
+            border-radius: 13px;
+            padding: 16px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            color: #000d1a;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .access-btn:hover {
+            box-shadow: 0 0 20px rgba(0,229,255,0.5);
+        }
+
+        .access-btn:active {
+            transform: scale(0.97);
+        }
+
+        .access-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            transform: skewX(-25deg);
+            transition: none;
+        }
+
+        .access-btn:hover::before {
+            animation: shimmerSweep 0.5s forwards;
+        }
+
+        @keyframes shimmerSweep {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        /* Warning text */
+        .warning-text {
+            margin-top: 25px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.67rem;
+            text-align: center;
+            color: var(--danger-red);
+            text-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .warning-emoji {
+            font-size: 0.9rem;
+            color: var(--gold);
+            text-shadow: 0 0 10px var(--gold-bright);
+            /* Reset emoji colors if possible to respect custom color, otherwise text-shadow provides the glow */
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Background Elements -->
+    <div class="ambient-glow-left"></div>
+    <div class="ambient-glow-right"></div>
+    <div class="radar-grid"></div>
+
+    <!-- Login Container -->
+    <div class="login-card">
+        <div class="card-shine"></div>
+        
+        <div class="logo-container stagger delay-1">
+            <div class="shield-wrapper">
+                <div class="shield-ring"></div>
+                <svg class="shield-icon" viewBox="0 0 24 24" fill="rgba(0,229,255,0.08)" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+            </div>
+            <h1 class="brand-name">BankTrace</h1>
+            <div class="brand-subtitle">Financial Crime Intelligence Platform</div>
+        </div>
+
+        <div class="divider stagger delay-2"></div>
+
+        <div class="section-label stagger delay-2">INVESTIGATOR LOGIN</div>
+
+        <div class="input-group stagger delay-3">
+            <input type="text" class="custom-input" placeholder="Badge ID or Username" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="input-group stagger delay-4" style="position: relative;">
+            <input type="password" id="password-input" class="custom-input" placeholder="Enter passphrase">
+            <button type="button" class="eye-btn" id="toggle-password">
+                <!-- Eye off by default, we'll swap SVG or paths if needed. Let's use a standard eye -->
+                <svg id="eye-icon" xmlns="http://www.w3.org/200/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </button>
+        </div>
+
+        <div class="input-group stagger delay-5">
+            <label>Clearance Level</label>
+            <div class="select-wrapper">
+                <select class="custom-input">
+                    <option value="" disabled selected>Select clearance level...</option>
+                    <option value="inspector">Inspector</option>
+                    <option value="senior">Senior Inspector</option>
+                    <option value="superintendent">Superintendent</option>
+                    <option value="director">Director</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="access-btn stagger delay-6">Access System</button>
+
+        <div class="warning-text stagger delay-6">
+            <span class="warning-emoji">⚠</span>
+            <span>Unauthorized access is a criminal offence under IT Act 2000</span>
+        </div>
+    </div>
+
+    <!-- Scanlines overlay over everything -->
+    <div class="scanlines"></div>
+
+    <script>
+        const passwordInput = document.getElementById('password-input');
+        const toggleBtn = document.getElementById('toggle-password');
+        const eyeIcon = document.getElementById('eye-icon');
+
+        toggleBtn.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                // Switch to eye-off icon
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            } else {
+                passwordInput.type = 'password';
+                // Switch to normal eye icon
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
