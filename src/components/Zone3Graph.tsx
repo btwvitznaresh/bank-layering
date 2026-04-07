@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import cytoscape, { type Core } from 'cytoscape';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { accounts, transactions, activeCases, type CaseId } from '../data/mockData';
-import Slider from 'rc-slider';
 import { twMerge } from 'tailwind-merge';
+import { AnomalyTimeline } from './AnomalyTimeline';
 import { Maximize, ZoomIn, ZoomOut, X, AlertTriangle } from 'lucide-react';
 
 
@@ -741,8 +741,30 @@ export const Zone3Graph: React.FC = () => {
   const formattedDate = new Date(timelineVal).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
   return (
-    <div className="flex-1 h-full relative overflow-hidden bg-transparent z-0" onContextMenu={e => e.preventDefault()}>
-      <div className="absolute top-0 left-0 w-full h-full z-0" ref={containerRef} />
+    <div 
+      className="flex-1 !bg-[#0A0E1A]"
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        backgroundColor: '#0A0E1A',
+        width: '100%',
+        height: '100%',
+      }}
+      onContextMenu={e => e.preventDefault()}
+    >
+      <div 
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          zIndex: 0,
+          backgroundColor: '#0A0E1A'
+        }} 
+        ref={containerRef} 
+        className="!bg-[#0A0E1A]"
+      />
       <div className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none" ref={overlaysRef} />
 
       {/* Path Breadcrumbs */}
@@ -789,27 +811,8 @@ export const Zone3Graph: React.FC = () => {
         </div>
       )}
 
-      {/* Timeline Slider */}
-      <div className="absolute top-4 left-6 right-6 z-10 glass-panel rounded-lg px-6 py-2.5 flex items-center gap-6 max-w-3xl mx-auto border-b-2 border-b-[var(--accent-cyan)] shadow-[0_4px_20px_rgba(0,245,255,0.05)]">
-        <span className="text-xs font-['Rajdhani'] font-bold text-[var(--text-muted)] tracking-widest uppercase w-20">Timeline</span>
-        <div className="flex-1 px-2">
-          <Slider 
-            min={new Date('2023-01-01').getTime()} 
-            max={new Date('2024-12-31').getTime()} 
-            step={86400000} // 1 day
-            value={timelineVal}
-            onChange={(val) => setTimelineVal(val as number)}
-            styles={{
-              track: { backgroundColor: 'var(--accent-cyan)' },
-              handle: { backgroundColor: '#000', borderColor: 'var(--accent-cyan)', boxShadow: '0 0 10px rgba(0,245,255,0.5)' },
-              rail: { backgroundColor: 'rgba(255,255,255,0.1)' }
-            }}
-          />
-        </div>
-        <span className="text-sm font-['JetBrains_Mono'] text-[var(--accent-cyan)] w-24 text-right">
-          {formattedDate}
-        </span>
-      </div>
+      {/* Timeline Slider with Spikes */}
+      <AnomalyTimeline timelineVal={timelineVal} setTimelineVal={setTimelineVal} formattedDate={formattedDate} />
 
       {/* Zoom Controls */}
       <div className="absolute bottom-6 left-6 z-10 flex border-[rgba(255,255,255,0.1)] rounded-md glass-panel overflow-hidden shadow-lg">

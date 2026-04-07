@@ -4,6 +4,7 @@ import 'rc-slider/assets/index.css';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { activeCases, accounts } from '../data/mockData';
 import { Eye, EyeOff, RotateCcw, Trash2 } from 'lucide-react';
+import { RiskBadge } from './RiskBadge';
 
 import { twMerge } from 'tailwind-merge';
 
@@ -54,16 +55,20 @@ export const Zone2Sidebar: React.FC = () => {
             const caseAccounts = accounts.filter(a => a.cases.includes(id));
             const accCount = caseAccounts.length;
             const avgRisk = accCount ? Math.round(caseAccounts.reduce((sum, a) => sum + (a.riskScore || 0), 0) / accCount) : 0;
-            let riskTheme = 'text-[var(--accent-green)] border-[var(--accent-green)] shadow-[0_0_8px_rgba(0,255,136,0.2)] bg-[rgba(0,255,136,0.05)]';
             let extraAnim = '';
             if (avgRisk > 70) {
-                 riskTheme = 'text-[var(--accent-red)] border-[var(--accent-red)] shadow-[0_0_10px_rgba(255,59,59,0.4)] bg-[rgba(255,59,59,0.1)]';
                  extraAnim = 'animate-pulse';
-            } else if (avgRisk >= 40) {
-                 riskTheme = 'text-[var(--accent-gold)] border-[var(--accent-gold)] shadow-[0_0_8px_rgba(255,215,0,0.3)] bg-[rgba(255,215,0,0.05)]';
             }
             
             const isCore = ['C1', 'C2', 'C3', 'C4'].includes(id);
+
+            // Compute case factors
+            const caseFactors = [];
+            const vpns = caseAccounts.filter(a => a.isVpn).length;
+            const circs = caseAccounts.filter(a => a.isCircular).length;
+            if (vpns > 0) caseFactors.push({ name: 'VPN Cluster', impact: vpns * 8 });
+            if (circs > 0) caseFactors.push({ name: 'Circular Network', impact: circs * 6 });
+            caseFactors.push({ name: 'Base Aggregate', impact: Math.max(0, avgRisk - (vpns * 8) - (circs * 6)) });
 
             return (
               <div key={id} className="relative group">
@@ -73,9 +78,7 @@ export const Zone2Sidebar: React.FC = () => {
                     <span className="text-xs font-medium break-words leading-tight flex-1" style={{ color: id.startsWith('OP-') ? 'white' : 'inherit' }}>{caseData.name}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded border border-opacity-50 font-['JetBrains_Mono'] ${riskTheme} ${extraAnim}`}>
-                      Risk: {avgRisk}
-                    </span>
+                    <RiskBadge score={avgRisk} factors={caseFactors} className={extraAnim} />
                     <span className="text-[10px] bg-black/40 px-1.5 py-0.5 rounded font-['JetBrains_Mono'] text-[var(--text-muted)]" title="Accounts">
                       {accCount}
                     </span>

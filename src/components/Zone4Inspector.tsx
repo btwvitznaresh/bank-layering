@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { accounts, transactions, activeCases } from '../data/mockData';
-import { Shield, Copy, Phone, Mail, Globe, Download, Network, X } from 'lucide-react';
+import { Shield, Copy, Phone, Mail, Globe, Download, Network, X, BrainCircuit, Sparkles, Plus } from 'lucide-react';
+import { RiskBadge } from './RiskBadge';
 import { twMerge } from 'tailwind-merge';
 
 const getInitials = (name: string) => {
@@ -12,6 +13,15 @@ const getInitials = (name: string) => {
 export const Zone4Inspector: React.FC = () => {
   const { selectedAccountId, setSelectedAccountId, setExpandedNodeId, setToastMessage } = useGlobalState();
   const [flaggedOverride, setFlaggedOverride] = useState<Record<string, boolean>>({});
+
+  const [aiState, setAiState] = useState<'idle' | 'generating' | 'done'>('idle');
+  const [aiText, setAiText] = useState('');
+
+  // Reset AI state when selected account changes
+  React.useEffect(() => {
+    setAiState('idle');
+    setAiText('');
+  }, [selectedAccountId]);
 
   const account = accounts.find(a => a.id === selectedAccountId);
 
@@ -128,6 +138,47 @@ export const Zone4Inspector: React.FC = () => {
     }
   };
 
+  const getRiskFactors = (acc: any) => {
+    const factors = [];
+    if (acc.isCircular) factors.push({ name: 'Circular Transfers', impact: 9 });
+    if (acc.isVpn) factors.push({ name: 'VPN Usage', impact: 14 });
+    if (acc.isInterCase) factors.push({ name: 'Cross-Case Links', impact: 12 });
+    if (acc.balance > 10000000) factors.push({ name: 'High Volume', impact: 18 });
+    if (acc.sharedPhoneWith?.length > 0) factors.push({ name: 'Shared Identity', impact: 8 });
+    // Base factor
+    factors.push({ name: 'Baseline Vector', impact: Math.max(0, acc.riskScore - factors.reduce((sum, f) => sum + f.impact, 0)) });
+    return factors.sort((a, b) => b.impact - a.impact);
+  };
+
+  const generateAIReport = () => {
+    if (!account) return;
+    setAiState('generating');
+    setAiText('');
+    
+    // Simulate thinking delay
+    setTimeout(() => {
+      const vpnStr = account.isVpn ? `Multiple transfers were VPN-masked acting primarily on ${account.ip}, ` : '';
+      const circStr = account.isCircular ? `Automated circular transaction loops were detected, ` : '';
+      const flagStr = flaggedOverride[account.id] ? `Manual flags correspond with unusual timing. ` : '';
+      const txCount = accountTxps.length;
+      
+      const fullText = `${account.name.split(' ')[0]} (${account.id}) routed ₹${(account.balance / 100000).toFixed(1)}L across connected entities. ${vpnStr}${circStr}${flagStr}Analysis of ${txCount} recent transfers suggests potential layering behavior mirroring established typologies. Risk Score: ${account.riskScore}. Recommended action: Freeze and escalate for immediate manual review.`;
+      
+      const words = fullText.split(' ');
+      let index = 0;
+      
+      const streamTimer = setInterval(() => {
+        if (index < words.length) {
+          setAiText(prev => prev + (prev ? ' ' : '') + words[index]);
+          index++;
+        } else {
+          clearInterval(streamTimer);
+          setAiState('done');
+        }
+      }, 50); // fast stream effect
+    }, 600);
+  };
+
   return (
     <>
       <div 
@@ -165,15 +216,18 @@ export const Zone4Inspector: React.FC = () => {
               
               <h2 className="text-lg font-['Rajdhani'] font-bold text-white text-center leading-tight mb-1">{account.name}</h2>
               
-              {flaggedOverride[account.id] || account.isCircular || account.isVpn ? (
-                <span className="text-[10px] font-bold tracking-widest uppercase bg-[var(--accent-red)] text-black px-2 py-0.5 rounded flex items-center gap-1">
-                  🚩 FLAGGED
-                </span>
-              ) : (
-                <span className="text-[10px] font-bold tracking-widest uppercase bg-[var(--accent-green)] text-black px-2 py-0.5 rounded flex items-center gap-1">
-                  ACTIVE ACCOUNT
-                </span>
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                {flaggedOverride[account.id] || account.isCircular || account.isVpn ? (
+                  <span className="text-[10px] font-bold tracking-widest uppercase bg-[var(--accent-red)] text-black px-2 py-0.5 rounded flex items-center gap-1">
+                    🚩 FLAGGED
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold tracking-widest uppercase bg-[var(--accent-green)] text-black px-2 py-0.5 rounded flex items-center gap-1">
+                    ACTIVE
+                  </span>
+                )}
+                <RiskBadge score={account.riskScore} factors={getRiskFactors(account)} />
+              </div>
             </div>
 
             {/* Core Details */}
@@ -249,6 +303,40 @@ export const Zone4Inspector: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* AI Narrative Section */}
+            <div className="p-5 border-b border-[var(--border-subtle)] bg-[rgba(0,229,255,0.02)]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] text-[var(--accent-cyan)] uppercase tracking-wider font-['DM_Sans'] flex items-center gap-1.5 font-bold">
+                  <BrainCircuit className="w-3.5 h-3.5" /> AI Intelligence Brief
+                </span>
+              </div>
+              
+              {aiState === 'idle' ? (
+                <button 
+                  onClick={generateAIReport}
+                  className="w-full flex justify-center items-center gap-2 text-sm bg-[rgba(0,245,255,0.05)] border border-[rgba(0,245,255,0.3)] text-[var(--accent-cyan)] hover:bg-[rgba(0,245,255,0.15)] hover:border-[var(--accent-cyan)] font-medium py-2 rounded transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" /> Generate Report
+                </button>
+              ) : (
+                <div className="bg-black/30 border border-[rgba(0,245,255,0.15)] rounded p-3 text-xs leading-relaxed text-white/90 font-['DM_Sans'] shadow-inner">
+                  <p className="min-h-[60px]">
+                    {aiText}
+                    {aiState === 'generating' && <span className="inline-block w-1.5 h-3 bg-[var(--accent-cyan)] ml-1 animate-pulse align-middle"></span>}
+                  </p>
+                  
+                  {aiState === 'done' && (
+                    <button 
+                      onClick={() => setToastMessage({ text: 'Added node to active investigation framework', id: Date.now() })}
+                      className="mt-3 w-full flex justify-center items-center gap-1.5 text-[11px] font-['JetBrains_Mono'] bg-[var(--accent-cyan)] text-black font-bold py-1.5 rounded hover:bg-white hover:shadow-[0_0_10px_rgba(0,245,255,0.5)] transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add to Case
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Transaction History */}
